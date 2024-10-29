@@ -2,10 +2,9 @@
 <?php $currentPage = 'sign-up'; ?>
 
 <!-- 環境変数ライブラリ -->
-<?php require 'vendor/autoload.php'; ?>
+<?php // require 'vendor/autoload.php'; ?>
 
 <?php include 'layout/header.php'; ?>
-
 
 <div class="container">
     <div class="content">
@@ -14,10 +13,8 @@
         <!-- Google Recaptcha  Dotenv used-->
         <?php
         use Dotenv\Dotenv;
-
         $dotenv = Dotenv::createImmutable(__DIR__);
         $dotenv->load();
-
         $public_key = $_ENV['recapthca'];
         $private_key = $_ENV['recapthcaSecret'];
         $url = $_ENV['recaptchaURL'];
@@ -38,8 +35,12 @@
 
             // JSON形式のデータをデコード
             $response = json_decode($response);
-            print_r($response);
 
+            if ($response->success == false) {
+                $errCaptcha = "Wrong reCAPTCHA";
+            }
+
+            // POST
             // functions.php で定義した escape 関数を使い、xss 対策を行う
             $first_name = escape($_POST['first_name']);
             $last_name = escape($_POST['last_name']);
@@ -93,7 +94,8 @@
                 echo $errPass; // エラーメッセージを出力
             }
 
-            if (!isset($errFn) && !isset($errLn) && !isset($errUn) && !isset($errUe) && !isset($errPass)) {
+            // 一つでも空やエラーがある場合
+            if (!isset($errFn) && !isset($errLn) && !isset($errUn) && !isset($errUe) && !isset($errPass) && !isset($errCaptcha)) {
                 // パスワードをハッシュ化
                 $hash = password_hash($user_password, PASSWORD_BCRYPT, ['cost' => 12]);
 
@@ -101,16 +103,29 @@
                 $timeZone = date_default_timezone_set('Asia/Tokyo');
                 $registration_date = date('Y-m-d H:i:s');
 
+                //! Email Confirmation (Sending Email)
+                $mail->addAddress($_POST['user_email']); // ユーザーが入力したもの
+                $mail->Subject = "Verify your Email 😊";
+                $mail->Body = "
+                <h1>Thank you for signing up</h1>
+                <a href=''>Click here to verify</a>
+                <p>This link is valid for 20 mins only</p>
+                ";
 
-                // ユーザーを登録
-                $query = "INSERT INTO users (first_name, last_name, user_name, user_email, user_password, validation_key, registration_date, is_active) VALUES ('$first_name', '$last_name', '$user_name', '$user_email', '$hash', '$user_confirm_password', '$registration_date', 0)";
+                // メールが送信された場合
+                if ($mail->send()) {
+                    // ユーザーを登録
+                    $query = "INSERT INTO users (first_name, last_name, user_name, user_email, user_password, validation_key, registration_date, is_active) VALUES ('$first_name', '$last_name', '$user_name', '$user_email', '$hash', '$user_confirm_password', '$registration_date', 0)";
 
-                // クエリを実行
-                $query_conn = mysqli_query($connection, $query);
-                if (!$query_conn) {
-                    die("Query Failed" . mysqli_error($connection));
+                    // クエリを実行
+                    $query_conn = mysqli_query($connection, $query);
+                    if (!$query_conn) {
+                        die("Query Failed" . mysqli_error($connection));
+                    } else {
+                        echo "<div class='notification'>Sign up successful. Check your email for activation link</div>";
+                    }
                 } else {
-                    echo "<div class='notification'>Sign up successful. Check your email for activation link</div>";
+                    echo "<div class='notification'>Email not sent</div>";
                 }
             }
         }
@@ -166,6 +181,9 @@
 
             <!-- reCaptcha -->
             <div class="g-recaptcha" data-sitekey="<?php echo $public_key; ?>"></div>
+            <?php echo isset($errCaptcha)
+                ? "<span class='error'>$errCaptcha</span>"
+                : ''; ?>
 
             <div class="input-box">
                 <input type="submit" class="input-submit" value="SIGN UP" name="sign-up">

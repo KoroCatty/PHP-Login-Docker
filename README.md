@@ -1,8 +1,8 @@
 # PHP Login System with reCAPTCHA
 
 <!-- Image -->
-<!-- ![](./screenshot.png) -->
-[](https://google.com)
+![](./screenshot.png)
+[]()
 
 
 ## Prerequisites
@@ -80,6 +80,13 @@ exit
 ```
 docker exec -it php-apache bash
 composer require vlucas/phpdotenv
+exit
+```
+
+## php mailer install
+```
+docker exec -it php-apache bash
+composer require phpmailer/phpmailer
 exit
 ```
 

@@ -10,6 +10,11 @@
     <div class="content">
         <h2 class="heading">Sign Up</h2>
 
+        <?php 
+        // header.php で定義した関数
+         echo getToken(32);
+         ?>
+
         <!-- Google Recaptcha  Dotenv used-->
         <?php
         use Dotenv\Dotenv;
@@ -106,16 +111,22 @@
                 //! Email Confirmation (Sending Email)
                 $mail->addAddress($_POST['user_email']); // ユーザーが入力したもの
                 $mail->Subject = "Verify your Email 😊";
+                $email = $_POST['user_email'];
+                // Email Address が URL にかもされないようにエンコード
+                $email = base64_encode(urlencode($_POST['user_email'])); 
+                
+                $token = getToken(32); // トークンを生成(header.php で定義)
+                
                 $mail->Body = "
                 <h1>Thank you for signing up</h1>
-                <a href=''>Click here to verify</a>
-                <p>This link is valid for 20 mins only</p>
-                ";
-
+                <p><a href='http://localhost:8080/activation.php?eid={$email}&token={$token}'>Click here to verify</a></p>
+                <p>This link is valid for 20 minutes only.</p>
+            ";
+            
                 // メールが送信された場合
                 if ($mail->send()) {
                     // ユーザーを登録
-                    $query = "INSERT INTO users (first_name, last_name, user_name, user_email, user_password, validation_key, registration_date, is_active) VALUES ('$first_name', '$last_name', '$user_name', '$user_email', '$hash', '$user_confirm_password', '$registration_date', 0)";
+                    $query = "INSERT INTO users (first_name, last_name, user_name, user_email, user_password, validation_key, registration_date, is_active) VALUES ('$first_name', '$last_name', '$user_name', '$user_email', '$hash', '$token', '$registration_date', 0)";
 
                     // クエリを実行
                     $query_conn = mysqli_query($connection, $query);

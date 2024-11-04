@@ -60,24 +60,46 @@
             if (!preg_match($pattern_fn, $first_name)) {
                 $errFn = "Must be at least 3 characters";
             }
+
             // last name 
             $pattern_ln = "/^[a-zA-Z ]{3,}$/";
             if (!preg_match($pattern_ln, $last_name)) {
                 $errLn = "Must be at least 3 characters";
             }
+
             // User name
             // More than 3, letter, number & underscore only
             $pattern_un = "/^[a-zA-Z0-9_]{3,}$/";
             if (!preg_match($pattern_un, $user_name)) {
                 $errUn = "Must be at least 3, letter, number & underscore only";
             }
+            // すでにDBに存在するユーザー名か確認
+            $query = "SELECT * FROM users WHERE user_name = '$user_name'";
+            $query_con = mysqli_query($connection, $query);
+            if ($query_con) {
+                $count = mysqli_num_rows($query_con); // 数を見る
+                if ($count > 0) {
+                    $errUn = "Username already exists in the database😅";
+                }
+            }
+
             // Email
             //filter_var($user_email, FILTER_VALIDATE_EMAIL);
             // example@gmail.com
             $pattern_ue = "/^([a-z0-9\+_\-]+)(\.[a-z0-9\+_\-]+)*@([a-z0-9\-]+\.)+[a-z]{2,6}$/i";
             if (!preg_match($pattern_ue, $user_email)) {
                 $errUe = "Invalid format of email";
+            } 
+            // すでにDBに存在するメールアドレスか確認
+            $queryEmail = "SELECT * FROM users WHERE user_email = '$user_email'";
+            $queryEmail_con = mysqli_query($connection, $queryEmail);
+            if ($queryEmail_con) {
+                $countEmail = mysqli_num_rows($queryEmail_con); // 数を見る
+                if ($countEmail > 0) {
+                    $errUe = "Email already exists in the DB😅";
+                }
             }
+
             // Password & matching password
             // At least 4 characters, 1 upper case, 1 lower case letter and 1 number exist
             // ^.*(?=.{4,56})：4～56文字の長さであることを確認
@@ -114,12 +136,15 @@
                 $email = $_POST['user_email'];
                 // Email Address が URL にかもされないようにエンコード
                 $email = base64_encode(urlencode($_POST['user_email'])); 
-                
                 $token = getToken(32); // トークンを生成(header.php で定義)
+
+                // Expiring in 20 minutes & Encoding it (URLに醸されるので)
+                $expire_date = date("Y-m-d H:i:s", time() + 60 * 20 );
+                $expire_date = base64_encode(urlencode($expire_date)); 
                 
                 $mail->Body = "
                 <h1>Thank you for signing up</h1>
-                <p><a href='http://localhost:8080/activation.php?eid={$email}&token={$token}'>Click here to verify</a></p>
+                <p><a href='http://localhost:8080/activation.php?eid={$email}&token={$token}&&expire={$expire_date}'>Click here to verify</a></p>
                 <p>This link is valid for 20 minutes only.</p>
             ";
             
@@ -133,7 +158,14 @@
                     if (!$query_conn) {
                         die("Query Failed" . mysqli_error($connection));
                     } else {
+                        // 成功時 Remove the values of variables
                         echo "<div class='notification'>Sign up successful. Check your email for activation link</div>";
+                        unset($first_name);
+                        unset($last_name);
+                        unset($user_name);
+                        unset($user_email);
+                        unset($user_password);
+                        unset($user_confirm_password);
                     }
                 } else {
                     echo "<div class='notification'>Email not sent</div>";
@@ -144,7 +176,7 @@
         <form action="sign_up.php" method="POST">
             <!-- First Name -->
             <div class="input-box">
-                <input type="text" class="input-control" placeholder="First name" name="first_name" autocomplete="off">
+                <input type="text" class="input-control" placeholder="First name" name="first_name" autocomplete="off"  value="<?php echo isset($first_name) ? htmlspecialchars($first_name) : ""; ?>">
                 <?php echo isset($errFn)
                     ? "<span class='error'>$errFn</span>"
                     : ''; ?>
@@ -152,7 +184,7 @@
 
             <!-- Last Name -->
             <div class="input-box">
-                <input type="text" class="input-control" placeholder="Last name" name="last_name" autocomplete="off">
+                <input type="text" class="input-control" placeholder="Last name" name="last_name" autocomplete="off" value="<?php echo isset($last_name) ? htmlspecialchars($last_name) : ""; ?>">
                 <?php echo isset($errLn)
                     ? "<span class='error'>$errLn</span>"
                     : ''; ?>
@@ -160,7 +192,7 @@
 
             <!-- User Name -->
             <div class="input-box">
-                <input type="text" class="input-control" placeholder="Username" name="user_name" autocomplete="off">
+                <input type="text" class="input-control" placeholder="Username" name="user_name" autocomplete="off" value="<?php echo isset($user_name) ? htmlspecialchars($user_name) : ""; ?>">
                 <?php echo isset($errUn)
                     ? "<span class='error'>$errUn</span>"
                     : ''; ?>
@@ -168,7 +200,7 @@
 
             <!-- Email -->
             <div class="input-box">
-                <input type="email" class="input-control" placeholder="Email address" name="user_email" autocomplete="off">
+                <input type="email" class="input-control" placeholder="Email address" name="user_email" autocomplete="off" value="<?php echo isset($user_email) ? htmlspecialchars($user_email) : ""; ?>">
                 <?php echo isset($errUe)
                     ? "<span class='error'>$errUe</span>"
                     : ''; ?>

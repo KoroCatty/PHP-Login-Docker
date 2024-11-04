@@ -1,5 +1,22 @@
+<?php ob_start();?>
 <?php require_once('includes/db.php'); ?>
 <?php require_once('includes/functions.php'); ?>
+
+<?php 
+// if(isset($_SESSION['login'])) {
+//   header("Location: index.php");
+//   }
+   ?>
+
+<?php
+// login してたら index.php にリダイレクト
+// if (isset($_SESSION['login'])) {
+//   header("Location: index.php");
+//   exit();
+// };
+?>
+
+
 
 <?php
 // all important variables in this file 
@@ -20,6 +37,8 @@ require 'vendor/phpmailer/phpmailer/src/Exception.php';
 require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
 require 'vendor/phpmailer/phpmailer/src/SMTP.php';
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">

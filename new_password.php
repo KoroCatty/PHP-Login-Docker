@@ -1,3 +1,4 @@
+<?php $currentPage = 'New Password Page'; ?>
 <?php include 'layout/header.php'; ?>
 
     <div class="container">

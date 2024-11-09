@@ -15,65 +15,60 @@
 
             $query = "SELECT * FROM users WHERE user_name = '$user_name' AND user_email = '$user_email' AND is_active = 1";
             $query_con = mysqli_query($connection, $query);
-            if(!$query_con) {
+            if (!$query_con) {
                 die("Query Failed" . mysqli_error($connection));
             }
 
 
+            if (mysqli_num_rows($query_con) == 1) {
+                // Check if user exists
+                if (!isset($_COOKIE['_unp_'])) {
+                    // ユーザーが入力した値を取得
+                    $user_name = $_POST['user_name'];
+                    $user_email = $_POST['user_email'];
 
-   if (mysqli_num_rows($query_con) == 1) {
+                    // タイムゾーンを設定
+                    date_default_timezone_set("asia/tokyo");
 
-            // Check if user exists
-            if (!isset($_COOKIE['_unp_'])) {
-                // ユーザーが入力した値を取得
-                $user_name = $_POST['user_name'];
-                $user_email = $_POST['user_email'];
+                    // メールを送信
+                    $mail->addAddress($_POST['user_email']);
+                    $token = getToken(32);
 
-                // タイムゾーンを設定
-                date_default_timezone_set("asia/tokyo");
+                    $encoded_token = base64_encode(urlencode($token) ); // encode
 
-                // メールを送信
-                $mail->addAddress($_POST['user_email']);
-                $token = getToken(32);
+                    $email = base64_encode(urlencode($_POST['user_email'])); // encode
 
-                $token = base64_encode($token); // URLに醸されるので
+                    // Expiring in 20 minutes & Encoding it (encode)
+                    $expire_date = date("Y-m-d H:i:s", time() + 60 * 20);
+                    $expire_date = base64_encode(urlencode($expire_date));
 
-                $email = base64_encode(urlencode($_POST['user_email']));
+                    // DB の validation_key を更新
+                    $query = "UPDATE users SET validation_key = '$token' WHERE user_name = '$user_name' AND user_email = '$user_email' AND is_active = 1";
 
-                // Expiring in 20 minutes & Encoding it (URLに醸されるので)
-                $expire_date = date("Y-m-d H:i:s", time() + 60 * 20);
-                $expire_date = base64_encode(urlencode($expire_date));
-
-                // DB の validation_key を更新
-                $query = "UPDATE users SET validation_key = '$token' WHERE user_name = '$user_name' AND user_email = '$user_email' AND is_active = 1";
-
-                $query_con = mysqli_query($connection, $query);
-                if (!$query_con) {
-                    die("Query Failed" . mysqli_error($connection));
-                } else {
-                    $mail->Subject = "Password reset request";
-                    $mail->Body = "
+                    $query_con = mysqli_query($connection, $query);
+                    if (!$query_con) {
+                        die("Query Failed" . mysqli_error($connection));
+                    } else {
+                        $mail->Subject = "Password reset request";
+                        $mail->Body = "
                         <h2>Follow the link to create a new password</h2>
-                        <a href='http://localhost:8080/new_password.php?eid={$email}&token={$token}&expire={$expire_date}'>Click here to verify</a>
+                        <a href='http://localhost:8080/new_password.php?eid={$email}&token={$encoded_token}&expire={$expire_date}'>Click here to verify</a>
                         <p>This link is valid for 5 minutes</p>
                         ";
 
-                    // メールが送られたら5分間のクッキーをセット & Random token
-                    if ($mail->send()) {
-                        setcookie('_unp_', getToken(16), time() + 60 * 5, '', '', '', true);
-                        echo "<div class='notification'>Check your email for password reset</div>";
+                        // メールが送られたら5分間のクッキーをセット & Random token
+                        if ($mail->send()) {
+                            setcookie('_unp_', getToken(16), time() + 60 * 5, '', '', '', true);
+                            echo "<div class='notification'>Check your email for password reset</div>";
+                        }
                     }
+                } else {
+                    echo "<div class='notification'>You must be wait at lest 5 minutes for another request for Email Plz 😅</div>";
                 }
             } else {
-                echo "<div class='notification'>You must be wait at lest 5 minutes for another request for Email Plz 😅</div>";
+                echo "Sorry! User not found";
             }
-
-
-
-        } else {
-            echo "Sorry! User not found";
         }
-    }
 
 
         // fafasfsad3D

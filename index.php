@@ -1,6 +1,6 @@
-<?php 
-    ob_start();
-    session_start();
+<?php
+ob_start();
+session_start();
 ?>
 
 <!-- 環境変数ライブラリ -->
@@ -35,7 +35,7 @@ include 'connect.php';
 
         <?php
         // Login しているかどうかで切り分ける
-        if (isset($_SESSION['login'])) {
+        if (isset($_SESSION['login']) || isset($_COOKIE['_ucv_'])) {
             echo "<div class='notification'>
         You are logged in 😊
         <a href='logout.php'>Logout</a>

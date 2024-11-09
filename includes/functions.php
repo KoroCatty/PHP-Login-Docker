@@ -18,3 +18,32 @@ function getToken($length) {
   $token = substr($modified_base64_encode, 0, $length); // トークンの長さを指定
   return $token;
 }
+
+// クッキーを確認し,それが存在していれば、DBに格納された情報と照合し、期限が切れていないかを判断
+function isAlreadyLoggedIn() {
+  global $connection;
+
+  date_default_timezone_set("asia/tokyo");
+  $current_date = date("Y-m-d H:i:s"); // 2021-08-01 12:00:00
+  if (isset($_COOKIE['_ucv_'])) {
+    $selector = escape(base64_decode($_COOKIE['_ucv_']));
+
+    $query = "SELECT * FROM remember_me WHERE selector = '$selector' AND is_expired = 0";
+    $query_con = mysqli_query($connection, $query);
+    if (!$query_con) {
+      die("Query Failed" . mysqli_error($connection));
+    }
+
+    // クエリ結果から1行分のデータを連想配列として取得
+    $result = mysqli_fetch_assoc($query_con);
+    // 該当するレコードが1件のみである場合のみ
+    if (mysqli_num_rows($query_con) == 1 ) {
+      $expire_date = $result['expire_date'];
+
+      // 現在の日付よりも前であるかを確認し、過ぎていれば true を返します。つまり、期限が切れている場合には true を返し、ログイン状態と見なす
+      if ($expire_date >= $current_date) {
+        return true;
+      } 
+    }
+  }
+}

@@ -1,21 +1,13 @@
-<?php ob_start();?>
+<?php ob_start(); ?>
 <?php require_once('includes/db.php'); ?>
 <?php require_once('includes/functions.php'); ?>
-
-<?php 
-// if(isset($_SESSION['login'])) {
-//   header("Location: index.php");
-//   }
-   ?>
 
 <?php
 // login してたら index.php にリダイレクト
 // if (isset($_SESSION['login'])) {
 //   header("Location: index.php");
-//   exit();
-// };
+// }
 ?>
-
 
 
 <?php
@@ -57,6 +49,12 @@ require 'vendor/phpmailer/phpmailer/src/SMTP.php';
 </head>
 
 <body>
+  <?php 
+  // if (isAlreadyLoggedIn()) {
+  //   header("Location: index.php");
+  // }
+?>
+
   <?php
   // Create an instance; passing `true` enables exceptions
   $mail = new PHPMailer(true);

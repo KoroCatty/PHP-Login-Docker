@@ -3,6 +3,13 @@
 <?php include 'layout/header.php'; ?>
 
 
+<?php 
+// ログインしていたら index.php にリダイレクト
+if (isset($_SESSION['login']) || isset($_COOKIE['_ucv_'])) {
+  header("Location: index.php");
+}
+?>
+
 <!-- Google Recaptcha  Dotenv used-->
 <?php
 
@@ -68,8 +75,12 @@ $url = $_ENV['recaptchaURL'];
         ?>
 
         <?php
-        if (isset($_POST['login'])) {
+        // 初期状態は false
+        $isAuthenticated = false;
 
+        ?>
+        <?php
+        if (isset($_POST['login'])) {
             //! Google recaptcha 
             $response_key = $_POST['g-recaptcha-response'];
             // file_get_contents() 関数を使って、Google reCAPTCHA API にリクエストを送信
@@ -101,11 +112,13 @@ $url = $_ENV['recaptchaURL'];
                 // Activate しているか確認
                 if ($result['is_active'] == 1) {
                     if (!isset($errCaptcha)) {
+                        $isAuthenticated = true; // ログイン成功
                         echo "<div class='notification'>Logged In Successful😊</div>";
+
+                        //! ログイン成功なので、index.php にリダイレクト
                         $_SESSION['login'] = 'success';
                         // Refresh:2 sets a delay of 2 seconds before the redirect occurs
                         header("Refresh:2;url=index.php");
-                        exit();
                     }
                 } else {
                     // Activate ボタン作成。ここで Activate できる
@@ -117,6 +130,38 @@ $url = $_ENV['recaptchaURL'];
                 echo "<div class='notification'>Password or username or email or incorrect</div>";
             }
         }
+
+        if ($isAuthenticated) {
+            // Remember me がチェックされていたら実行
+            if (!empty($_POST['remember-me'])) {
+                echo "<div class='notification'>Remember me is checked</div>";
+
+                //! 2日間のクッキーをセット
+                $selector = getToken(32);
+                $encoded_selector = base64_encode($selector);
+                setcookie('_ucv_', $encoded_selector, time() + 60 * 60 * 24 * 2, '', '', '', true); // jsを使って取得できないようにするために HttpOnly を true に
+
+                date_default_timezone_set("asia/tokyo");
+                $expire = date("Y-m-d H:i:s", time() + 60 * 60 * 24 * 2); // 2 days
+
+                // Insert into DB
+                $query = "INSERT INTO remember_me (user_name, selector, expire_date, is_expired) VALUES ('$user_name', '$selector', '$expire', 0)";
+                $query_con = mysqli_query($connection, $query);
+                if (!$query_con) {
+                    die("Query Failed" . mysqli_error($connection));
+                } else {
+                    echo "<div class='notification'>Data inserted to Remember Me Table!!</div>";
+                }
+            }
+            $_SESSION['login'] = 'success';
+
+        }
+
+        // function.php で定義した関数
+        if (isAlreadyLoggedIn()) {
+            echo "Logged in";
+        } 
+
         ?>
 
         <form action="login.php" method="POST">
@@ -131,6 +176,7 @@ $url = $_ENV['recaptchaURL'];
             </div>
             <div class="input-box rm-box">
                 <div>
+                    <!-- REMEMBER ME -->
                     <input type="checkbox" id="remember-me" class="remember-me" name="remember-me">
                     <label for="remember-me">Remember me</label>
                 </div>

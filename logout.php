@@ -23,6 +23,7 @@ if (isset($_COOKIE['_ucv_'])) {
 if (isset($_SESSION['login'])) {
     session_destroy();
     unset($_SESSION['login']); // session から login の値 を削除
+    unset($_SESSION['name']); // session から name の値 を削除
 }
 
 header("Location: login.php");

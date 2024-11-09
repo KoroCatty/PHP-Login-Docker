@@ -1,6 +1,8 @@
 <?php
 ob_start();
 session_start();
+require_once("includes/functions.php");
+require_once("includes/db.php");
 ?>
 
 <!-- 環境変数ライブラリ -->
@@ -40,6 +42,8 @@ include 'connect.php';
         You are logged in 😊
         <a href='logout.php'>Logout</a>
         </div>";
+        } else if (isAlreadyLoggedIn()) {
+            echo "<div class='notification'>Welcome back, {$_SESSION['name']} 😊</div>";
         } else {
             echo "<div class='notification'>
         You are not logged in
@@ -48,6 +52,14 @@ include 'connect.php';
         };
         ?>
     </div>
+
+
+    <h1 style="font-size:2rem; color: red;">
+        Welcome back <br />
+        <?php isAlreadyLoggedIn(); ?>
+    </h1>
+
+
 
 
 </main>
